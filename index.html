@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nicolas Coronel - Canvas Portfolio</title>
+    <style>
+        /* Basic styling for the body and theme toggle button */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif; /* Using Inter font */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; /* Align content to the top */
+            min-height: 100vh; /* Ensure body takes full viewport height */
+            background-color: #f0f0f0; /* Default light mode background */
+            color: #333; /* Default light mode text color */
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Dark mode styles */
+        body.dark-mode {
+            background-color: #222;
+            color: #eee;
+        }
+
+        #theme-toggle {
+            position: fixed; /* Fixed position */
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px; /* Rounded corners */
+            cursor: pointer;
+            font-size: 1rem;
+            background-color: #007bff; /* Blue button for light mode */
+            color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            z-index: 1000; /* Ensure it's above other content */
+        }
+
+        body.dark-mode #theme-toggle {
+            background-color: #6a0dad; /* Purple button for dark mode */
+        }
+
+        #theme-toggle:hover {
+            transform: translateY(-2px);
+        }
+
+        canvas {
+            display: block;
+            background-color: transparent; /* Canvas background will be transparent, body handles the color */
+            border-radius: 12px; /* Rounded corners for canvas */
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Shadow for depth */
+            margin-top: 80px; /* Space for the fixed toggle button */
+            margin-bottom: 20px;
+            max-width: 90%; /* Ensure canvas is responsive */
+            height: auto; /* Maintain aspect ratio */
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 768px) {
+            #theme-toggle {
+                top: 10px;
+                right: 10px;
+                padding: 8px 12px;
+                font-size: 0.9rem;
+            }
+
+            canvas {
+                margin-top: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button id="theme-toggle">Toggle Dark Mode</button>
+    <canvas id="portfolioCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('portfolioCanvas');
+        const ctx = canvas.getContext('2d');
+        const themeToggle = document.getElementById('theme-toggle');
+        let profilePic; // Declared here, initialized in window.onload
+
+        // Define content for the canvas
+        const content = {
+            name: "Nicolas Coronel",
+            title: "Business Development | Data Enthusiast | Former Professional Rugby Player",
+            about: "After a successful period driving sales and client acquisition in Rome, I am excited to be relocating to Madrid, a city where I am now setting down permanent roots for personal reasons. My time in Rome was defined by my ability to secure new business through impactful presentations and reliable deal closures. I offer a blend of experience from professional sports and technology, which has given me a foundation of discipline, teamwork, and sharp analytical skills.",
+            experience: [
+                "Cristoforo Roma (2025): Data | SEO | Travel Industry Partnerships",
+                "Betterplace Oviedo (2024): SDR-Account Executive",
+                "Tecnocasa I Madrid (2023-2024): Real State",
+                "Rivadavia Seguros (2022-2023): Administrative Assistant",
+                "Many Clubs (2013-2023): Pro Rugby Player"
+            ],
+            skills: "Python, ML, LLM, AWS, SQL, PowerBI, SAP",
+            languages: "Spanish (Native), English (Professional), Italian (Professional)",
+            contact: "Phone: +34 621 053 129 | Email: nico.coronel@protonmail.com | LinkedIn: nicolasjuancoronel"
+        };
+
+        // Function to draw text with word wrapping
+        function drawWrappedText(context, text, x, y, maxWidth, lineHeight, textColor) {
+            const words = text.split(' ');
+            let line = '';
+            let currentY = y;
+
+            context.fillStyle = textColor;
+
+            for (let n = 0; n < words.length; n++) {
+                const testLine = line + words[n] + ' ';
+                const metrics = context.measureText(testLine);
+                const testWidth = metrics.width;
+
+                if (testWidth > maxWidth && n > 0) {
+                    context.fillText(line, x, currentY);
+                    line = words[n] + ' ';
+                    currentY += lineHeight;
+                } else {
+                    line = testLine;
+                }
+            }
+            context.fillText(line, x, currentY);
+            return currentY; // Return the new Y position after drawing
+        }
+
+        // Main drawing function
+        function drawPortfolio() {
+            // Clear the canvas first
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            const textColor = isDarkMode ? '#eee' : '#333';
+            const headingColor = isDarkMode ? '#ADD8E6' : '#007bff'; // Light blue for dark, blue for light
+            const accentColor = isDarkMode ? '#9370DB' : '#FFA500'; // Purple for dark, orange for light
+
+            const padding = 30;
+            let currentY = padding;
+            const lineHeight = 20;
+            const sectionSpacing = 40;
+            const maxWidth = canvas.width - (2 * padding);
+
+            // --- Profile Picture and Name ---
+            const imgSize = Math.min(canvas.width * 0.3, 150); // Responsive image size, max 150px
+            const imgX = (canvas.width - imgSize) / 2;
+            const imgY = currentY;
+
+            // Check if profilePic is defined and loaded before drawing
+            if (profilePic && profilePic.complete && profilePic.naturalHeight !== 0) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(imgX + imgSize / 2, imgY + imgSize / 2, imgSize / 2, 0, Math.PI * 2);
+                ctx.clip();
+                ctx.drawImage(profilePic, imgX, imgY, imgSize, imgSize);
+                ctx.restore();
+            } else {
+                // Draw a placeholder circle if image not loaded or failed
+                ctx.beginPath();
+                ctx.arc(imgX + imgSize / 2, imgY + imgSize / 2, imgSize / 2, 0, Math.PI * 2);
+                ctx.fillStyle = isDarkMode ? '#555' : '#ccc';
+                ctx.fill();
+                ctx.strokeStyle = isDarkMode ? '#888' : '#999';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.font = '12px Inter';
+                ctx.fillStyle = isDarkMode ? '#bbb' : '#666';
+                ctx.textAlign = 'center';
+                ctx.fillText('Cargando Imagen...', imgX + imgSize / 2, imgY + imgSize / 2 - 5);
+                ctx.fillText('o Falló la Carga', imgX + imgSize / 2, imgY + imgSize / 2 + 10);
+                ctx.textAlign = 'left'; // Reset text alignment
+            }
+
+            currentY = imgY + imgSize + padding;
+
+            ctx.font = 'bold 32px Inter';
+            ctx.fillStyle = headingColor;
+            ctx.textAlign = 'center';
+            ctx.fillText(content.name, canvas.width / 2, currentY);
+            currentY += 40;
+
+            ctx.font = '18px Inter';
+            ctx.fillStyle = textColor;
+            ctx.fillText(content.title, canvas.width / 2, currentY);
+            currentY += sectionSpacing;
+            ctx.textAlign = 'left'; // Reset text alignment
+
+            // --- About Me Section ---
+            ctx.font = 'bold 24px Inter';
+            ctx.fillStyle = headingColor;
+            ctx.fillText("About Me", padding, currentY);
+            currentY += 30;
+            ctx.font = '16px Inter';
+            currentY = drawWrappedText(ctx, content.about, padding, currentY, maxWidth, lineHeight, textColor);
+            currentY += sectionSpacing;
+
+            // --- Experience Section ---
+            ctx.font = 'bold 24px Inter';
+            ctx.fillStyle = headingColor;
+            ctx.fillText("Experience", padding, currentY);
+            currentY += 30;
+            ctx.font = '16px Inter';
+            content.experience.forEach(job => {
+                currentY = drawWrappedText(ctx, `• ${job}`, padding, currentY, maxWidth, lineHeight, textColor);
+                currentY += lineHeight / 2; // Smaller spacing between jobs
+            });
+            currentY += sectionSpacing;
+
+            // --- Skills Section ---
+            ctx.font = 'bold 24px Inter';
+            ctx.fillStyle = headingColor;
+            ctx.fillText("Skills", padding, currentY);
+            currentY += 30;
+            ctx.font = '16px Inter';
+            currentY = drawWrappedText(ctx, content.skills, padding, currentY, maxWidth, lineHeight, textColor);
+            currentY += lineHeight;
+
+            ctx.font = 'bold 20px Inter';
+            ctx.fillStyle = headingColor;
+            ctx.fillText("Languages", padding, currentY);
+            currentY += 25;
+            ctx.font = '16px Inter';
+            currentY = drawWrappedText(ctx, content.languages, padding, currentY, maxWidth, lineHeight, textColor);
+            currentY += sectionSpacing;
+
+            // --- Contact Section ---
+            ctx.font = 'bold 24px Inter';
+            ctx.fillStyle = headingColor;
+            ctx.fillText("Contact", padding, currentY);
+            currentY += 30;
+            ctx.font = '16px Inter';
+            currentY = drawWrappedText(ctx, content.contact, padding, currentY, maxWidth, lineHeight, textColor);
+            currentY += sectionSpacing;
+
+            // Adjust canvas height to fit content
+            canvas.height = currentY + padding;
+        }
+
+        // Function to resize canvas and redraw
+        function resizeCanvas() {
+            // Set canvas width to be responsive, e.g., 90% of parent width, but with a max
+            canvas.width = Math.min(window.innerWidth * 0.9, 800); // Max width 800px
+            drawPortfolio();
+        }
+
+        // Event listeners
+        window.addEventListener('resize', resizeCanvas);
+        
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            // Store theme preference in local storage
+            if (document.body.classList.contains('dark-mode')) {
+                localStorage.setItem('theme', 'dark');
+            } else {
+                localStorage.setItem('theme', 'light');
+            }
+            drawPortfolio(); // Redraw canvas with new theme colors
+        });
+
+        // Initialize on window load
+        window.onload = () => {
+            // Re-initialize profilePic here to ensure it's fresh for this load attempt
+            profilePic = new Image();
+
+            profilePic.onload = () => {
+                console.log('Profile picture loaded successfully.');
+                resizeCanvas(); // Redraw once the image is loaded
+            };
+            profilePic.onerror = () => {
+                console.error("Failed to load profile picture. Using placeholder.");
+                resizeCanvas(); // Redraw with placeholder if image fails
+            };
+
+            // Set image source here, ensuring __file_url__ is available
+            profilePic.src = typeof __file_url__ !== 'undefined' ? __file_url__('SEVEN-volando-transformed.png') : 'profilePicNicoNegro.jpg';
+            console.log('Profile Picture Source (on load):', profilePic.src);
+
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+            }
+
+            // Immediately attempt to draw. If image is not ready, placeholder will show.
+            // The onload/onerror handlers will trigger a redraw when the image state changes.
+            resizeCanvas();
+        };
+    </script>
+</body>
+</html>
